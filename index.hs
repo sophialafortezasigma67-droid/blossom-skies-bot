@@ -1,33 +1,49 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+    GatewayIntentBits.GuildMembers
+  ],
+  partials: [Partials.Channel]
+});const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require('discord.js');
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
 });
 
-client.once('ready', () => {
+// 🌸 Slash command setup
+const commands = [
+  new SlashCommandBuilder()
+    .setName('hi')
+    .setDescription('Say hi to the bot'),
+
+  new SlashCommandBuilder()
+    .setName('ping')
+    .setDescription('Check bot latency')
+].map(cmd => cmd.toJSON());
+
+const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+
+client.once('ready', async () => {
   console.log(`🌸 Logged in as ${client.user.tag}`);
-});
 
-client.on('guildMemberAdd', member => {
-  const channel = member.guild.systemChannel;
-  if (!channel) return;
-
-  channel.send(
-    `🌸 Welcome to Blossom Skies, ${member}!  
-We’re so happy you’re here ✨`
+  await rest.put(
+    Routes.applicationCommands(client.user.id),
+    { body: commands }
   );
 });
 
-client.on('messageCreate', message => {
-  if (message.author.bot) return;
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isChatInputCommand()) return;
 
-  if (message.content.toLowerCase() === 'hi') {
-    message.reply('🌸 hello!! welcome to Blossom Skies ✨');
+  if (interaction.commandName === 'hi') {
+    await interaction.reply('🌸 hello!! welcome to Blossom Skies ✨');
+  }
+
+  if (interaction.commandName === 'ping') {
+    await interaction.reply('🌙 Pong!');
   }
 });
 
